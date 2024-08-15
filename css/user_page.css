@@ -1,0 +1,266 @@
+*  {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+  }
+  
+  body {
+      background-color: #e9f5ff; 
+      color: #333; 
+  }
+  
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+  }
+  
+  .navbar {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    justify-content: space-between;
+  }
+  
+  .nav-section {
+    display: flex;
+    align-items: center;
+  }
+  .navbar :where(.nav-section, .search-form .nav-logo) {
+    gap: 3rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .nav-bar .nav-section {
+    gap: 1rem;
+  }
+  
+  .navbar :where(.logo-image, .pensquare-button, .gear-button, .braket-button) {
+    gap: 1rem;
+    width: 32px;
+    cursor: pointer;
+    border-radius: none;
+  }
+  
+  .navbar .nav-button {
+    border: none;
+    cursor: pointer;
+    height: 50px;
+    width: 50px;
+    background-color: white;
+  }
+  
+  .navbar .nav-button i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  } 
+  
+  .navbar .logo-image {
+    width: 165px;
+    height: 55px;
+  }
+  
+  .navbar .nav-logo {
+    display: flex;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+  
+  .navbar .nav-section .nav-left {
+    gap: 1rem;
+  }
+  
+  .navbar .search-form .search-input {
+    width: 300px; 
+    height: 40px;
+    border: 1px solid black;
+    padding: 0 1rem;
+    outline: none;
+  }
+  
+  .navbar .search-form .search-button {
+    width: auto;
+    height: 40px;
+    padding: 0 1rem;
+    border: 1px solid black;
+    border-left: 0;
+  }
+  
+  .search-input-container {
+    display: flex;
+    align-items: center;
+  }
+  
+  button:hover {
+    color: #7ed957;
+  }
+  
+  .fa-right-from-bracket:hover {
+    color: red;
+  }
+  
+  .fa-right-from-bracket {
+    color: black;
+  }
+  
+  @media (max-width: 768px) {
+  
+    .container {
+        max-width: 720px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+  
+    .container {
+        max-width: 320px;
+    }
+  }
+
+  .search-input-container {
+    display: flex;
+    align-items: center;
+    margin-top: 6;
+  }
+  
+  .search-input {
+    width: 300px;
+    height: 40px;
+    border: 1px solid #ccc;
+    padding: 0 1rem;
+    border-radius: 5px;
+    outline: none;
+    margin-top: 10;
+  }
+  
+  .search-button {
+    height: 40px;
+    padding: 10 1rem;
+    border: 1px solid #007e57; 
+    border-left: 0;
+    color: black; 
+    border-radius: 0 5px 5px 0;
+    transition: background-color 0.3s;
+    color: black;
+    background-color: white;
+    border: none;
+    height: 10;
+  }
+  
+  
+  .dropdown {
+    display: none;
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    width: 300px; 
+    font-size: larger;
+  }
+  
+  .dropdown-container.show .dropdown {
+    display: block;
+  }
+  
+  .dropdown li {
+    list-style: none;
+  }
+  
+  .dropdown li a {
+    text-decoration: none;
+    display: block;
+    padding: 8px 16px;
+    color: black;
+    font-weight: normal; 
+    font-size: 1.2rem;
+  }
+  
+  .dropdown li a:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .active {
+    font-weight: bold;
+    background-color: #7ed957;
+  }
+
+  .dropdown .categories-item a {
+    font-weight: bold; 
+    font-size: 1.5rem; 
+  }
+
+.profile-section {
+    padding: 2rem;
+    background-color: #ffffff; 
+    margin: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.profile-section h2 {
+    font-size: 2rem;
+    color: #007e57; 
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    margin: 10px 0 5px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #007e57; /* Green button */
+    color: white; /* White text */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #005c41; /* Darker green on hover */
+}
+
+.fa-bars {
+    color: black;
+}
+
+.fa-house {
+    color: black;
+}
+
+.fa-magnifying-glass {
+    color: black;
+}   
+
+.fa-circle-user {
+    color: black;
+}
+
+  .fa-magnifying-glass:hover {
+    color: #7ed957;
+  }
+
+  .fa-house:hover {
+    color: #7ed957;
+  }
+
+  .fa-bars:hover {  
+    color: #7ed957;
+  }
+
+  .fa-circle-user:hover {  
+    color: #7ed957;
+  }
