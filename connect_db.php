@@ -30,7 +30,7 @@ if ($conn->connect_error) {
     
        USE user_db;
 
-    4. Now, create the `users` table with this command (add more attributers depending on your use case):
+    4. Now, create the `users` table with this command (add more attributes depending on your use case):
     
        CREATE TABLE users (
            id INT AUTO_INCREMENT PRIMARY KEY, // Auto-incrementing ID
