@@ -1,3 +1,61 @@
+<?php
+// Start the session
+session_start();
+
+// Include your database connection
+include('connect_db.php');
+
+// Handle the form submission via AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $content = $conn->real_escape_string($_POST['content']);
+    $is_anonymous = isset($_POST['anonymous']) && $_POST['anonymous'] == '1' ? 1 : 0; // Explicitly check for '1'
+
+    // Set category automatically based on the page
+    $category = 'Anxiety';
+
+    // Set user ID to null if posting anonymously
+    $post_user_id = $is_anonymous ? null : $_SESSION['user_id'];
+
+    // Prepare the SQL statement based on anonymity
+    if ($is_anonymous) {
+        $sql = "INSERT INTO posts (user_id, category, content, status) VALUES (NULL, ?, ?, 'pending')";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ss", $category, $content);
+    } else {
+        $sql = "INSERT INTO posts (user_id, category, content, status) VALUES (?, ?, ?, 'pending')";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("iss", $post_user_id, $category, $content);
+    }
+
+    if ($stmt->execute()) {
+        $username = $is_anonymous ? 'Anonymous' : $_SESSION['username'];
+        echo json_encode([
+            'success' => true,
+            'username' => $username,
+            'content' => $content
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'error' => $stmt->error]);
+    }
+    $stmt->close();
+    $conn->close();
+    exit();
+}
+
+// Fetch only accepted posts from the database
+$sql = "SELECT posts.*, users.username AS author_name FROM posts 
+        LEFT JOIN users ON posts.user_id = users.id
+        WHERE posts.status = 'accepted' AND posts.category = 'Anxiety'
+        ORDER BY posts.id DESC";
+$result = $conn->query($sql);
+
+$posts = [];
+while ($row = $result->fetch_assoc()) {
+    $posts[] = $row;
+}
+$conn->close();
+?>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -5,7 +63,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PMHJ</title>
   <link rel="icon" href="Images/Favicon.icon">
-  <link rel="stylesheet" href="css\anxiety.css">
+  <link rel="stylesheet" href="css/anxiety.css">
   <script src="https://kit.fontawesome.com/931b85ca51.js" crossorigin="anonymous"></script>
 </head>
 
@@ -33,7 +91,7 @@
               </button>
             </a>
             <a href="#" class="nav-logo">
-              <img src="image\LogoPicture.png" alt="Logo" class="logo-image">
+              <img src="image/LogoPicture.png" alt="Logo" class="logo-image">
               <h2 class="logo-text"></h2>
             </a>
           </div>
@@ -71,7 +129,7 @@
 
   <div class="content-container">
     <h1>What is Anxiety?</h1>
-    <img src="image\Anxiety.jpg" alt="Anxiety" class="anxiety-image">
+    <img src="image/Anxiety.jpg" alt="Anxiety" class="anxiety-image">
 
     <p>
       Anxiety is a complex emotional experience characterized by feelings of fear, worry, and uneasiness. It can arise
@@ -101,13 +159,13 @@
   </div>
 
   <section class="post-section" id="post-section">
-    <div class="post-form-container"> <!-- -->
+    <div class="post-form-container">
       <h2>Create a Post</h2>
       <form id="post-form">
-        <textarea id="post-content" placeholder="Write your post here..." required></textarea>
+        <textarea id="post-content" name="content" placeholder="Write your post here..." required></textarea>
         <div class="post-options">
           <label>
-            <input type="checkbox" id="anonymous-checkbox">
+            <input type="checkbox" id="anonymous-checkbox" name="anonymous">
             Post anonymously
           </label>
           <button type="submit" id="post-button">Post</button>
@@ -117,88 +175,55 @@
 
     <div class="posts-container">
       <h2>Posts</h2>
-      <div id="posts"></div>
+      <div id="posts">
+        <?php foreach ($posts as $post) { ?>
+          <div class="post">
+            <p><strong>Post Content:</strong> <?php echo htmlspecialchars($post['content']); ?></p>
+            <p><strong>Author:</strong> <?php echo $post['author_name'] ? htmlspecialchars($post['author_name']) : 'Anonymous'; ?></p>
+          </div>
+        <?php } ?>
+      </div>
     </div>
-  </section> <!---->
+  </section>
 
-  <script src="js\home_page.js"></script>
-  <script src="js/categories.js"></script>
   <script>
-    function toggleDropdown() {
-      const dropdown = document.querySelector('.dropdown');
-      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-    }
+  document.getElementById('post-form').addEventListener('submit', function(e) {
+    e.preventDefault();
 
-    document.addEventListener('click', function(event) {
-      const dropdownContainer = document.querySelector('.dropdown-container');
-      const dropdown = document.querySelector('.dropdown');
+    const content = document.getElementById('post-content').value;
+    const anonymous = document.getElementById('anonymous-checkbox').checked ? 1 : 0;
 
-      if (!dropdownContainer.contains(event.target)) {
-        dropdown.style.display = 'none';
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'anxiety.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        const response = JSON.parse(xhr.responseText);
+        if (response.success) {
+          // Alert the user
+          alert('Your post has been submitted and is pending approval.');
+          // Clear the form fields
+          document.getElementById('post-content').value = '';
+          document.getElementById('anonymous-checkbox').checked = false;
+        } else {
+          alert('There was an error saving your post.');
+        }
       }
+    };
+
+    xhr.send(`content=${encodeURIComponent(content)}&anonymous=${encodeURIComponent(anonymous)}`);
+  });
+
+  // Smooth scroll to post section when pen button is clicked
+  const penButton = document.getElementById('pen-button');
+  const postSection = document.getElementById('post-section');
+
+  penButton.addEventListener('click', function() {
+    postSection.scrollIntoView({
+      behavior: 'smooth'
     });
-
-    // Smooth scroll to post section when pen button is clicked
-    const penButton = document.getElementById('pen-button');
-    const postSection = document.getElementById('post-section');
-
-    penButton.addEventListener('click', function() {
-      postSection.scrollIntoView({
-        behavior: 'smooth'
-      });
-    });
-
-    // Post creation functionality
-    const postForm = document.getElementById('post-form');
-    const postsContainer = document.getElementById('posts');
-
-    postForm.addEventListener('submit', function(event) {
-      event.preventDefault();
-      createPost();
-    });
-
-    function createPost() {
-      const postContent = document.getElementById('post-content').value;
-      const isAnonymous = document.getElementById('anonymous-checkbox').checked;
-
-      // Create a new post element
-      const postElement = document.createElement('div');
-      postElement.classList.add('post');
-
-      // Create the post header
-      const postHeader = document.createElement('div');
-      postHeader.classList.add('post-header');
-
-      const authorElement = document.createElement('span');
-      authorElement.textContent = isAnonymous ? 'Anonymous' : 'Your Name';
-
-      const postActions = document.createElement('div');
-      postActions.classList.add('post-actions');
-
-      const deleteButton = document.createElement('button');
-      deleteButton.textContent = 'Delete';
-      deleteButton.addEventListener('click', function() {
-        postsContainer.removeChild(postElement);
-      });
-
-      postActions.appendChild(deleteButton);
-      postHeader.appendChild(authorElement);
-      postHeader.appendChild(postActions);
-
-      // Create the post content
-      const postContentElement = document.createElement('p');
-      postContentElement.textContent = postContent;
-
-      // Append the post header and content to the post element
-      postElement.appendChild(postHeader);
-      postElement.appendChild(postContentElement);
-
-      // Append the post element to the posts container
-      postsContainer.appendChild(postElement);
-
-      // Clear the post content input
-      document.getElementById('post-content').value = '';
-    }
+  });
   </script>
 </body>
 

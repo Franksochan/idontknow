@@ -1,9 +1,67 @@
+<?php
+// Start the session
+session_start();
+
+// Include your database connection
+include('connect_db.php');
+
+// Handle the form submission via AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $content = $conn->real_escape_string($_POST['content']);
+    $is_anonymous = isset($_POST['anonymous']) && $_POST['anonymous'] == '1' ? 1 : 0; // Explicitly check for '1'
+
+    // Set category automatically based on the page
+    $category = 'Panic Attack';
+
+    // Set user ID to null if posting anonymously
+    $post_user_id = $is_anonymous ? null : $_SESSION['user_id'];
+
+    // Prepare the SQL statement based on anonymity
+    if ($is_anonymous) {
+        $sql = "INSERT INTO posts (user_id, category, content, status) VALUES (NULL, ?, ?, 'pending')";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ss", $category, $content);
+    } else {
+        $sql = "INSERT INTO posts (user_id, category, content, status) VALUES (?, ?, ?, 'pending')";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("iss", $post_user_id, $category, $content);
+    }
+
+    if ($stmt->execute()) {
+        $username = $is_anonymous ? 'Anonymous' : $_SESSION['username'];
+        echo json_encode([
+            'success' => true,
+            'username' => $username,
+            'content' => $content
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'error' => $stmt->error]);
+    }
+    $stmt->close();
+    $conn->close();
+    exit();
+}
+
+// Fetch only accepted posts from the database
+$sql = "SELECT posts.*, users.username AS author_name FROM posts 
+        LEFT JOIN users ON posts.user_id = users.id
+        WHERE posts.status = 'accepted' AND posts.category = 'Panic Attack'
+        ORDER BY posts.id DESC";
+$result = $conn->query($sql);
+
+$posts = [];
+while ($row = $result->fetch_assoc()) {
+    $posts[] = $row;
+}
+$conn->close();
+?>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PMHJ</title>
+  <title>Panic Attack</title>
   <link rel="icon" href="Images/Favicon.icon">
   <link rel="stylesheet" href="css/anxiety.css">
   <script src="https://kit.fontawesome.com/931b85ca51.js" crossorigin="anonymous"></script>
@@ -55,7 +113,7 @@
             <i class="fa-solid fa-pen-to-square fa-2x"></i>
           </button>
           <div class="nav-section nav-right">
-          <a href="user_page.php">
+            <a href="user_page.php">
               <i class="fa-solid fa-circle-user fa-2x"></i>
             </a>
             <div class="nav-section nav-right">
@@ -71,33 +129,31 @@
 
   <div class="content-container">
     <h1>What is Panic Attack?</h1>
-        <img src="image/Panic_attack.jpg" alt="Panic_attack" class="panic-attack-image">
+    <img src="image/Panic_attack.jpg" alt="Panic Attack" class="panicattack-image">
 
-        <p>A panic attack is a sudden and intense episode of fear or anxiety that can occur without warning. During an
-            attack, individuals often experience a rapid heartbeat, sweating, trembling, and shortness of breath. These
-            physical symptoms can be so severe that it may feel as if one is having a heart attack or losing control,
-            even though no real danger is present. Panic attacks typically last a few minutes, but the experience can be
-            quite frightening. They can happen to anyone and may be triggered by stressful situations or occur
-            spontaneously without an obvious cause.</p>
+    <p>
+      A panic attack is a sudden episode of intense fear or discomfort that reaches a peak within minutes. It can involve
+      a range of symptoms such as heart palpitations, sweating, trembling, shortness of breath, and feelings of impending
+      doom. Panic attacks can occur unexpectedly and may be triggered by stress or specific situations. When they become
+      frequent, they may lead to a diagnosis of panic disorder, which can significantly impact daily life and mental health.
+    </p>
 
-        <p>Although panic attacks can be isolated incidents, frequent attacks may signal a condition known as panic
-            disorder. This disorder is characterized by persistent worry about future attacks and avoidance of places or
-            situations where previous attacks occurred. Managing and treating panic attacks is crucial to prevent them
-            from interfering with daily life. Effective treatments include cognitive-behavioral therapy (CBT), which
-            helps individuals understand and change their patterns of thinking and behavior, and medications such as
-            selective serotonin reuptake inhibitors (SSRIs). Additionally, lifestyle changes like regular exercise,
-            relaxation techniques, and mindfulness practices can be beneficial in reducing the frequency and intensity
-            of attacks.</p>
-    </div>
+    <p>
+      Managing panic attacks often involves strategies to reduce stress and anxiety. Techniques such as deep breathing
+      exercises, cognitive-behavioral therapy (CBT), and medications can help alleviate symptoms and prevent future
+      occurrences. It's important for individuals experiencing frequent panic attacks to seek help from a mental health
+      professional for proper diagnosis and treatment.
+    </p>
+  </div>
 
   <section class="post-section" id="post-section">
-    <div class="post-form-container"> <!-- -->
+    <div class="post-form-container">
       <h2>Create a Post</h2>
       <form id="post-form">
-        <textarea id="post-content" placeholder="Write your post here..." required></textarea>
+        <textarea id="post-content" name="content" placeholder="Write your post here..." required></textarea>
         <div class="post-options">
           <label>
-            <input type="checkbox" id="anonymous-checkbox">
+            <input type="checkbox" id="anonymous-checkbox" name="anonymous">
             Post anonymously
           </label>
           <button type="submit" id="post-button">Post</button>
@@ -107,12 +163,56 @@
 
     <div class="posts-container">
       <h2>Posts</h2>
-      <div id="posts"></div>
+      <div id="posts">
+        <?php foreach ($posts as $post) { ?>
+          <div class="post">
+            <p><strong>Post Content:</strong> <?php echo htmlspecialchars($post['content']); ?></p>
+            <p><strong>Author:</strong> <?php echo $post['author_name'] ? htmlspecialchars($post['author_name']) : 'Anonymous'; ?></p>
+          </div>
+        <?php } ?>
+      </div>
     </div>
-  </section> <!---->
+  </section>
 
-  <script src="js/home_page.js"></script>
-  <script src="js/categories.js"></script>
+  <script>
+  document.getElementById('post-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const content = document.getElementById('post-content').value;
+    const anonymous = document.getElementById('anonymous-checkbox').checked ? 1 : 0;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'panicattack.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        const response = JSON.parse(xhr.responseText);
+        if (response.success) {
+          // Alert the user
+          alert('Your post has been submitted and is pending approval.');
+          // Clear the form fields
+          document.getElementById('post-content').value = '';
+          document.getElementById('anonymous-checkbox').checked = false;
+        } else {
+          alert('There was an error saving your post.');
+        }
+      }
+    };
+
+    xhr.send(`content=${encodeURIComponent(content)}&anonymous=${encodeURIComponent(anonymous)}`);
+  });
+
+  // Smooth scroll to post section when pen button is clicked
+  const penButton = document.getElementById('pen-button');
+  const postSection = document.getElementById('post-section');
+
+  penButton.addEventListener('click', function() {
+    postSection.scrollIntoView({
+      behavior: 'smooth'
+    });
+  });
+  </script>
 </body>
 
 </html>

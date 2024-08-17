@@ -18,7 +18,7 @@ if ($conn->connect_error) {
 /*
     Steps to create your database and table:
 
-    1. Open MySQL or phpMyAdmin.
+    1. Open MySQL Shell.
 
     2. Run this command to create your database:
     
