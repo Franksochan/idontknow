@@ -16,29 +16,52 @@ if ($conn->connect_error) {
 }
 
 /*
-    Steps to create your database and table:
+ Steps to create your MySQL database and tables:
 
-    1. Open MySQL Shell.
+    1. Open your MySQL Shell.
 
-    2. Run this command to create your database:
+    2. Switch to SQL mode by typing the following command:
+    
+       \sql
+
+    3. Connect to your MySQL server running on localhost by entering:
+    
+       \connect root@localhost
+       
+       (This will prompt you to enter your MySQL root password to log in.)
+
+    4. After successfully connecting, create your database with the following command:
     
        CREATE DATABASE user_db;
     
-       (This will make a new database called `user_db`—change the name if you want, but update `$dbname` here too.)
+       (This command creates a new database named `user_db`. 
+       If you prefer a different name, replace `user_db` with your chosen name.)
 
-    3. Then, select your database with:
+    5. Select your newly created database with:
     
        USE user_db;
 
-    4. Now, create the `users` table with this command (add more attributes depending on your use case):
+    6. Now, create the `users` table by running the following command:
     
        CREATE TABLE users (
-           id INT AUTO_INCREMENT PRIMARY KEY, // Auto-incrementing ID
-           username VARCHAR(50) NOT NULL,     // Username (can't be empty)
-           email VARCHAR(100) NOT NULL UNIQUE,// Email (must be unique)
-           password VARCHAR(255) NOT NULL     // Password (will store the hashed version)
+           id INT AUTO_INCREMENT PRIMARY KEY,     
+           username VARCHAR(50) NOT NULL,         
+           email VARCHAR(100) NOT NULL UNIQUE,    
+           password VARCHAR(255) NOT NULL,        
+           role ENUM('user', 'admin') NOT NULL DEFAULT 'user'  
        );
 
-    5. Ayun lang.
+    7. After creating the `users` table, you can proceed to create the `posts` table:
+    
+       CREATE TABLE posts (
+           id INT AUTO_INCREMENT PRIMARY KEY,                   
+           user_id INT NOT NULL,                                
+           category ENUM('Stress', 'Anxiety', 'Panic Attack', 'Depression') NOT NULL, 
+           content TEXT NOT NULL,                              
+           status ENUM('pending', 'accepted', 'rejected') NOT NULL DEFAULT 'pending',  
+           FOREIGN KEY (user_id) REFERENCES users(id)         
+       );
+
+    8. Your database and tables are now set up! You can start inserting data or querying the tables.
 */
 ?>
